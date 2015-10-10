@@ -3,6 +3,7 @@ using FluentNHibernate.Cfg.Db;
 using NHibernate;
 using NHibernate.Cfg;
 using NHibernate.Criterion;
+using NHibernate.Type;
 using nhibernateProblem.Entities;
 using System;
 
@@ -45,7 +46,7 @@ namespace nhibernateProblem
 
                 foreach (var item in items)
                 {
-                    Console.WriteLine(item.ID);
+                    Write(item);
                 }
 
                 Console.WriteLine("Fetch and filter using QueryOver...");
@@ -57,17 +58,25 @@ namespace nhibernateProblem
 
                 DataItem maxSendDateTimeAlias = null;
 
-                var subQuery = QueryOver.Of<DataItem>(() => maxSendDateTimeAlias)
-                    .Select(Projections.ProjectionList()
-                    .Add(Projections.Max(() => maxSendDateTimeAlias.SendDateTime))
-                    .Add(Projections.Group(() => maxSendDateTimeAlias.Target)))
-                    .Where(() => dataItemAlias.Source == maxSendDateTimeAlias.Source);
+                /*     var subQuery = QueryOver.Of<DataItem>(() => maxSendDateTimeAlias)
+                         .Select(Projections.ProjectionList()
+                         .Add(Projections.Max(() => maxSendDateTimeAlias.SendDateTime))
+                         .Add(Projections.Group(() => maxSendDateTimeAlias.Target)))
+                         .Where(() => dataItemAlias.Source == maxSendDateTimeAlias.Source);
+                         */
+                var subQuery =
+    QueryOver.Of<DataItem>()
+        .Select(
+            Projections.ProjectionList()
+                .Add(Projections.SqlGroupProjection("max(SendDateTime) as maxSendDateTimeAlias", "Target",
+                    new string[] { "maxAlias" }, new IType[] { NHibernate.NHibernateUtil.Int32 })));
+
 
                 c.WithSubquery.WhereProperty(p => p.SendDateTime).In(subQuery);
                 var result = c.GetExecutableQueryOver(Session).List<DataItem>();
                 foreach (var item in result)
                 {
-                    Console.WriteLine(item.ID);
+                    Write(item);
                 }
 
             }
@@ -77,6 +86,11 @@ namespace nhibernateProblem
 
             if (key.Key == ConsoleKey.D)
                 Session.CreateQuery("delete from DataItem").ExecuteUpdate();
+        }
+
+        private void Write(DataItem item)
+        {
+            Console.WriteLine("Id:{0}, source: {1} target: {2} version: {3} date: {4}", item.ID, item.Source, item.Target, item.Version, item.SendDateTime);
         }
     }
 }
