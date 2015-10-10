@@ -23,6 +23,7 @@ namespace nhibernateProblem
             this.Session = session;
             this.Transaction = transaction;
 
+            //add base data
             Session.SaveOrUpdate(new DataItem { SendDateTime = DateTime.Now.AddDays(-2), Source = "A", Target = "B", Version = 1 });
             Session.SaveOrUpdate(new DataItem { SendDateTime = DateTime.Now, Source = "A", Target = "B", Version = 2 });
             Session.SaveOrUpdate(new DataItem { SendDateTime = DateTime.Now.AddDays(-2), Source = "A", Target = "C", Version = 1 });
